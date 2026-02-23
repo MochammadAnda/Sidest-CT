@@ -1,0 +1,408 @@
+/* Shared styles for Login and Scan pages */
+:root{
+  --bg: #f7fafc;
+  --card: #ffffff;
+  --text: #0f172a;
+  --muted: #6b7280;
+  --muted2: #9ca3af;
+  --border: #e6edf2;
+  --shadow: 0 12px 30px rgba(15,23,42,.08);
+  /* Tema untuk CT Scan / stroke: teal + deep red accent */
+  --brand: #0f766e;
+  --brand2: #115e59;
+  --accent: #ef4444;
+  --radius: 14px;
+}
+*{ box-sizing: border-box; }
+html, body, #__next { height: 100%; }
+body{
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+.page{ min-height: 100vh; display:flex; align-items:stretch; justify-content:center; }
+.shell {
+  width: 100vw; /* Mengisi seluruh lebar jendela browser */
+  min-height: 100vh;
+  display: grid;
+  /* Pembagian kolom: Kiri lebih besar (1.2 bagian), Kanan untuk form (0.8 bagian) */
+  grid-template-columns: 1.2fr 0.8fr; 
+  background: var(--card);
+  overflow: hidden;
+}
+/* helper class for pages that should use single-column/full width */
+.shell.full-width{ 
+  grid-template-columns: 1fr;
+  width: 100%;
+}
+
+/* when using full-width shell, remove left/right auth padding so card can span fully */
+.shell.full-width .auth{ padding-left: 0; padding-right: 0; }
+
+/* LEFT IMAGE (used only on login) */
+.hero{
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(120deg, rgba(0,0,0,.35), rgba(0,0,0,.12)),
+    radial-gradient(circle at 30% 30%, rgba(15,118,110,.20), transparent 20%),
+    linear-gradient(180deg, rgba(6,95,154,.18), rgba(6,95,154,0.02));
+  background-size: cover;
+  background-position: center;
+}
+.hero::after{
+  content:"";
+  position:absolute; inset:0;
+  background: radial-gradient(900px 500px at 70% 40%, rgba(255,255,255,.03), transparent 60%);
+  pointer-events:none;
+}
+.hero-inner{
+  position: absolute; 
+  inset: 0;
+  display: flex; 
+  flex-direction: column;
+  justify-content: flex-end;
+  /* Padding dinamis: atas-bawah 5vh, kiri-kanan 6vw */
+  padding: 5vh 6vw; 
+  gap: 10px;
+}
+.hero-kicker{
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  font-weight: 700;
+  font-size: 13px;
+  color: rgba(255,255,255,.95);
+}
+.hero-kicker::after{
+  content:"";
+  height: 2px; width: 80px;
+  background: var(--accent);
+  border-radius: 2px;
+  opacity: .95;
+}
+.hero-title{
+  margin: 0;
+  color: #fff;
+  font-weight: 900;
+  font-size: clamp(26px, 3vw, 42px);
+  line-height: 1.15;
+  text-shadow: 0 10px 24px rgba(0,0,0,.25);
+}
+.hero-subtitle{
+  margin: 0;
+  color: rgba(255,255,255,.90);
+  font-size: 15px;
+  line-height: 1.6;
+  max-width: 50ch;
+}
+
+/* RIGHT AUTH */
+.auth{
+  position: relative;
+  padding: 36px 36px 28px 36px;
+  display: grid;
+  place-items: center;
+  background:
+    linear-gradient(90deg, rgba(247,250,252,.55), rgba(247,250,252,0));
+}
+.card{
+  width: min(420px, 100%);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 26px 24px 18px 24px;
+  box-shadow: 0 10px 26px rgba(15,23,42,.06);
+}
+/* Wider card variant used on scan page */
+.card.scan-card{ width: 100%; max-width: none; padding: 18px; border-radius: 0; box-shadow: none; }
+
+.logo{
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 10px auto;
+  background: linear-gradient(135deg, rgba(15,118,110,.10), rgba(6,95,154,.06));
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.logo img{ width: 58px; height: 58px; object-fit: contain; display:block; }
+.h1{ text-align:center; margin:6px 0 6px 0; font-size:30px; font-weight:900; letter-spacing:-.02em; }
+.desc{ text-align:center; margin:0 0 16px 0; color:var(--muted); font-size:14px; line-height:1.6; }
+.desc b{ color: var(--text); }
+.sep{ display:flex; align-items:center; gap:12px; margin:14px 0; color:var(--muted2); font-size:13px; }
+.sep::before, .sep::after{ content:""; flex:1; height:1px; background:var(--border); }
+.form{ display:grid; gap:12px; margin-top:6px; }
+label{ font-size:13px; font-weight:700; color:#111827; display:block; margin-bottom:6px; }
+.req{ color: var(--accent); }
+.field{ position: relative; }
+input{ width:100%; padding:12px 12px; border-radius:10px; border:1px solid var(--border); outline:none; background:#fff; font-size:14px; transition:border-color .2s ease, box-shadow .2s ease; }
+input:focus{ border-color: rgba(15,118,110,.55); box-shadow: 0 0 0 4px rgba(15,118,110,.12); }
+.hint{ font-size:12.5px; color:var(--muted2); margin-top:6px; }
+.pw-toggle{ position:absolute; right:10px; top:44px; border:0; background:transparent; cursor:pointer; padding:6px; border-radius:10px; color:#374151; display:inline-flex; align-items:center; justify-content:center; }
+.pw-toggle:hover{ background:#f3f4f6; }
+.btn-primary{ width:100%; padding:12px 14px; border-radius:10px; border:1px solid transparent; background:var(--brand); color:#fff; font-weight:800; font-size:15px; cursor:pointer; transition:background .2s ease, transform .03s ease; margin-top:6px; }
+.btn-primary:hover{ background: var(--brand2); }
+.btn-primary:active{ transform: translateY(1px); }
+.btn-primary:disabled{ opacity: 0.65; cursor: not-allowed; }
+
+/* Upload Area Styling */
+.upload {
+  position: relative;
+  background: linear-gradient(135deg, rgba(15,118,110,.05), rgba(6,95,154,.03)) !important;
+  border: 2px dashed rgba(15,118,110,.25) !important;
+  transition: all .2s ease;
+}
+.upload:hover {
+  border-color: rgba(15,118,110,.5);
+  background: linear-gradient(135deg, rgba(15,118,110,.08), rgba(6,95,154,.06)) !important;
+}
+
+/* Form Styling for Scan Page */
+.card.scan-card .form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.card.scan-card .field label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--text);
+  opacity: .8;
+}
+.card.scan-card input {
+  font-size: 15px;
+  padding: 13px 14px;
+  background: linear-gradient(to right, rgba(15,118,110,.02), rgba(6,95,154,.02));
+}
+
+/* Result Card Styling */
+.result-card {
+  background: linear-gradient(135deg, rgba(15,118,110,.08), rgba(6,95,154,.04));
+  border: 1px solid rgba(15,118,110,.2);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 16px;
+}
+.result-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 10px 0;
+}
+.result-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--brand);
+  margin: 8px 0 12px 0;
+}
+.result-item {
+  padding: 8px 0;
+  border-top: 1px solid rgba(15,118,110,.1);
+  font-size: 14px;
+}
+.result-item:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+.result-label {
+  color: var(--muted);
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+.result-data {
+  color: var(--text);
+  font-weight: 700;
+}
+.result-pdf-link {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 10px 16px;
+  background: var(--brand);
+  color: #fff;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 14px;
+  transition: background .2s ease;
+}
+.result-pdf-link:hover {
+  background: var(--brand2);
+}
+
+.footer{ text-align:center; margin-top:14px; font-size:12.5px; color:var(--muted2); display:flex; align-items:center; justify-content:center; gap:8px; }
+.pill{ display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border:1px solid var(--border); border-radius:999px; background:#fff; font-weight:700; color:#6b7280; }
+
+.result-card {
+  margin-top: 20px;
+  background: #ffffff;
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  animation: slideUp 0.4s ease-out;
+}
+
+.result-header {
+  padding: 20px;
+  background: #f8fafc;
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+}
+
+.result-badge {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 8px;
+}
+
+.result-main-value {
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.status-normal { color: #0d9488; }
+.status-abnormal { color: #dc2626; }
+
+.result-content { padding: 20px; }
+
+.confidence-section { margin-bottom: 24px; }
+
+.result-label-group {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.confidence-bar-bg {
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.confidence-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  transition: width 1s ease-in-out;
+}
+
+.bg-teal { background: #0d9488; }
+.bg-red { background: #dc2626; }
+
+.result-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--border);
+}
+
+.result-item .result-label {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.result-item .result-data {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.btn-pdf {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0 20px 20px 20px;
+  padding: 12px;
+  background: #f1f5f9;
+  color: #475569;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 10px;
+  transition: all 0.2s;
+}
+
+.btn-pdf:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+/* Container utama untuk area scan dan hasil */
+.scan-container {
+  display: grid;
+  grid-template-columns: 1fr; /* Default mobile satu kolom */
+  gap: 24px;
+  align-items: start;
+  transition: all 0.4s ease;
+  width: 100%;
+  max-width: 1400px; /* Batas maksimal agar tidak terlalu lebar di monitor ultra-wide */
+  margin: 0 auto;
+}
+
+/* Aktifkan 2 kolom jika result muncul */
+.scan-container.has-result {
+  grid-template-columns: 1fr 1fr;
+}
+
+/* Pastikan card mengambil tinggi yang cukup */
+.scan-card-dynamic {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: 0 10px 26px rgba(15,23,42,.06);
+}
+
+/* Base class untuk kartu agar fleksibel dan tingginya mengikuti wrapper */
+.flex-card {
+  display: flex;
+  flex-direction: column;
+  flex: 1; /* Membagi lebar 50/50 secara adil */
+  min-width: 0; 
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 10px 26px rgba(15,23,42,.06);
+}
+
+/* Pastikan section result-card juga menggunakan perilaku flex */
+.result-card.flex-card {
+  margin-top: 0 !important; /* Menghapus margin agar sejajar sempurna dengan kiri */
+}
+
+/* Tambahan agar isi di dalam kartu mengikuti tinggi kartu */
+.result-content {
+  flex: 1; 
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (max-width:980px){
+  .shell{ grid-template-columns:1fr; }
+  .hero{ min-height:46vh; }
+  .auth{ padding:22px 16px 22px 16px; background-position:right -30px top; }
+  .hero-inner{ padding:26px 18px; }
+  .scan-container.has-result {
+    grid-template-columns: 1fr;
+  }
+  .flex-card {
+    width: 100%;
+  }
+}
