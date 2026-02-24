@@ -13,7 +13,7 @@ export default function ScanPage() {
   const [resultData, setResultData] = useState<any>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  const API_URL = "https://daa8-158-140-166-68.ngrok-free.app/predict";
+  const API_URL = "http://127.0.0.1:5001/predict";
 
   function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0] ?? null;
@@ -81,15 +81,22 @@ export default function ScanPage() {
   }
 
   const handleDownloadPdf = async () => {
+    // Pastikan resultData dan pdf_file tersedia
+    const fileNameFromServer = resultData?.pdf_file;
+
+    if (!fileNameFromServer) {
+      alert("Data PDF belum tersedia. Silakan lakukan scan terlebih dahulu.");
+      return;
+    }
+
     try {
-      // Tampilkan indikator loading jika perlu (opsional)
-      const pdfEndpoint = "https://daa8-158-140-166-68.ngrok-free.app/download_pdf";
-      
+      // Tambahkan query parameter ?file=
+      const pdfEndpoint = `http://127.0.0.1:5001/download_pdf?file=${fileNameFromServer}`;
+
       const response = await fetch(pdfEndpoint, {
         method: 'GET',
         headers: {
-          // Header ini wajib untuk melewati halaman peringatan ngrok
-          'ngrok-skip-browser-warning': 'true' 
+          'ngrok-skip-browser-warning': 'true'
         }
       });
 
@@ -97,20 +104,16 @@ export default function ScanPage() {
         throw new Error(`Gagal mengunduh: ${response.status}`);
       }
 
-      // Ubah response menjadi bentuk Blob (file)
       const blob = await response.blob();
-      
-      // Buat URL sementara untuk file Blob tersebut
       const downloadUrl = window.URL.createObjectURL(blob);
-      
-      // Buat elemen <a> sementara untuk memicu unduhan otomatis
       const link = document.createElement('a');
       link.href = downloadUrl;
-      link.setAttribute('download', `Hasil_CT_Scan_${patientName || 'Pasien'}.pdf`); // Nama file yang diunduh
+
+      // Gunakan nama file yang cantik untuk user
+      link.setAttribute('download', `Laporan_CT_${patientName || 'Pasien'}.pdf`);
+
       document.body.appendChild(link);
       link.click();
-      
-      // Bersihkan elemen dan URL sementara
       link.remove();
       window.URL.revokeObjectURL(downloadUrl);
 
@@ -120,17 +123,17 @@ export default function ScanPage() {
     }
   };
 
-return (
-  <div className="page">
-    <link rel="stylesheet" href="/static/css/auth.css" />
+  return (
+    <div className="page">
+      <link rel="stylesheet" href="/static/css/auth.css" />
 
-    <main className="shell full-width" style={{ padding: "40px 20px" }}>
-      
-      {/* Container utama yang akan membagi layar menjadi 2 jika ada hasil */}
-      <div className={`scan-container ${status === "done" && resultData ? "has-result" : ""}`}>
-        
-        
-          
+      <main className="shell full-width" style={{ padding: "40px 20px" }}>
+
+        {/* Container utama yang akan membagi layar menjadi 2 jika ada hasil */}
+        <div className={`scan-container ${status === "done" && resultData ? "has-result" : ""}`}>
+
+
+
           {/* KOLOM KIRI: ANALISIS CT SCAN */}
           <section className="scan-card-dynamic flex-card">
             <div style={{ textAlign: "center", marginBottom: 20 }}>
@@ -141,20 +144,20 @@ return (
             <div className="form">
               <div className="field">
                 <label>🏥 Medical Record</label>
-                <input 
-                  type="text" 
-                  value={medicalRecord} 
-                  onChange={(e) => setMedicalRecord(e.target.value)} 
-                  placeholder="Contoh: 123456" 
+                <input
+                  type="text"
+                  value={medicalRecord}
+                  onChange={(e) => setMedicalRecord(e.target.value)}
+                  placeholder="Contoh: 123456"
                 />
               </div>
               <div className="field">
                 <label>👤 Nama Pasien</label>
-                <input 
-                  type="text" 
-                  value={patientName} 
-                  onChange={(e) => setPatientName(e.target.value)} 
-                  placeholder="Nama Lengkap" 
+                <input
+                  type="text"
+                  value={patientName}
+                  onChange={(e) => setPatientName(e.target.value)}
+                  placeholder="Nama Lengkap"
                 />
               </div>
             </div>
@@ -172,12 +175,12 @@ return (
                     <button className="btn-primary" onClick={startScan} disabled={status === "scanning"} style={{ flex: 1 }}>
                       {status === "scanning" ? "⏳ Memproses..." : "Mulai Analisis"}
                     </button>
-                    <button className="btn-secondary" onClick={() => handleFileSelect(null)} style={{padding: '12px 20px', borderRadius: '10px', border:'1px solid #ddd', background:'#fff'}}>✕</button>
+                    <button className="btn-secondary" onClick={() => handleFileSelect(null)} style={{ padding: '12px 20px', borderRadius: '10px', border: '1px solid #ddd', background: '#fff' }}>✕</button>
                   </div>
                 </div>
               )}
             </div>
-            
+
             <div className="footer" style={{ marginTop: 'auto', paddingTop: 20 }}>
               <span className="pill">Powered by CT-AI</span>
             </div>
@@ -200,7 +203,7 @@ return (
                     <span className="result-data-bold">{(Number(resultData.confidence) * 100).toFixed(2)}%</span>
                   </div>
                   <div className="confidence-bar-bg">
-                    <div 
+                    <div
                       className={`confidence-bar-fill ${resultData?.predicted_class === "Normal" ? "bg-teal" : "bg-red"}`}
                       style={{ width: `${Number(resultData.confidence) * 100}%` }}
                     ></div>
@@ -221,25 +224,25 @@ return (
 
               {/* URL PDF BARU */}
               <div style={{ padding: '0 20px 20px 20px' }}>
-                <button 
-                    onClick={handleDownloadPdf}
-                    className="btn-pdf"
-                    type="button"
-                    style={{ 
-                    margin: 0, 
-                    width: '100%', 
-                    border: 'none', 
+                <button
+                  onClick={handleDownloadPdf}
+                  className="btn-pdf"
+                  type="button"
+                  style={{
+                    margin: 0,
+                    width: '100%',
+                    border: 'none',
                     cursor: 'pointer',
                     fontFamily: 'inherit'
-                    }}
+                  }}
                 >
-                    📄 Unduh Laporan PDF
+                  📄 Unduh Laporan PDF
                 </button>
               </div>
             </section>
           )}
         </div>
-    </main>
-  </div>
-);
+      </main>
+    </div>
+  );
 }
