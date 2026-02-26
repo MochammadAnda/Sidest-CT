@@ -47,9 +47,11 @@ body{
   background:
     linear-gradient(120deg, rgba(0,0,0,.35), rgba(0,0,0,.12)),
     radial-gradient(circle at 30% 30%, rgba(15,118,110,.20), transparent 20%),
-    linear-gradient(180deg, rgba(6,95,154,.18), rgba(6,95,154,0.02));
+    linear-gradient(180deg, rgba(6,95,154,.18), rgba(6,95,154,0.02)),
+    url('/static/img/ct-kepala.jpeg');
   background-size: cover;
   background-position: center;
+  background-repeat: no-repeat;
 }
 .hero::after{
   content:"";
@@ -405,4 +407,66 @@ input:focus{ border-color: rgba(15,118,110,.55); box-shadow: 0 0 0 4px rgba(15,1
   .flex-card {
     width: 100%;
   }
+}
+
+/* Navbar Scan Page */
+.navbar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  border-bottom: 1px solid var(--border);
+  padding: 16px 32px;
+  box-shadow: 0 2px 8px rgba(15,23,42,.04);
+  margin-bottom: 32px;
+}
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.navbar-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(15,118,110,.15), rgba(6,95,154,.10));
+  border: 1px solid rgba(15,118,110,.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.navbar-logo img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+.navbar-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.btn-logout {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #ffffff;
+  color: var(--text);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(15,23,42,.06);
+}
+.btn-logout:hover {
+  background: #f8fafc;
+  border-color: rgba(15,118,110,.3);
+  box-shadow: 0 4px 12px rgba(15,23,42,.12);
 }

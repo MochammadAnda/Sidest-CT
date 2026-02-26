@@ -37,7 +37,7 @@ export default function LoginPage() {
         <section className="auth" aria-label="Panel Masuk">
           <div className="card">
             <div className="logo" aria-label="Logo SiDes CT">
-              <img src="/static/img/logo.svg" alt="Logo SiDes CT" />
+              <img src="/static/img/logo-poltekkes.webp" alt="Logo SiDes CT" />
             </div>
 
             <div className="h1">SiDes CT</div>

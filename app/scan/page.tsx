@@ -13,7 +13,7 @@ export default function ScanPage() {
   const [resultData, setResultData] = useState<any>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  const API_URL = "https://daa8-158-140-166-68.ngrok-free.app/predict";
+  const API_URL = "https://0794-158-140-166-68.ngrok-free.app/predict";
 
   function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0] ?? null;
@@ -23,6 +23,8 @@ export default function ScanPage() {
   function handleFileSelect(f: File | null) {
     setFile(f);
     setResult(null);
+    setResultData(null);
+    setStatus("idle");
     if (!f) return setPreview(null);
     const url = URL.createObjectURL(f);
     setPreview(url);
@@ -38,7 +40,7 @@ export default function ScanPage() {
 
   function startScan() {
     if (!file || !medicalRecord || !patientName) {
-      setResult("Mohon isi medical record, patient name, dan pilih file.");
+      setResult("Mohon isi medical record, nama pasien, dan pilih file.");
       return;
     }
     setStatus("scanning");
@@ -56,9 +58,8 @@ export default function ScanPage() {
       .then(async (res) => {
         const data = await res.json().catch(() => null);
         if (!res.ok) throw new Error((data && data.message) || `Server returned ${res.status}`);
-        // expected response: { confidence, image_url, medical_record, patient_name, pdf_file, predicted_class, status }
         if (data) {
-          const { confidence, image_url, medical_record: mr, patient_name: pn, pdf_file, predicted_class } = data as any;
+          const { confidence, image_url, pdf_file, predicted_class } = data as any;
           setResultData(data);
           setResult(`Hasil: ${predicted_class} — Confidence: ${Number(confidence).toFixed(3)}`);
           if (image_url) setImageUrl(image_url);
@@ -76,170 +77,281 @@ export default function ScanPage() {
       })
       .catch((err) => {
         setResult(`Gagal menghubungi server: ${err.message}`);
+        setStatus("done");
       })
       .finally(() => setStatus("done"));
   }
 
   const handleDownloadPdf = async () => {
     try {
-      // Tampilkan indikator loading jika perlu (opsional)
-      const pdfEndpoint = "https://daa8-158-140-166-68.ngrok-free.app/download_pdf";
-      
+      if (!resultData?.pdf_file) {
+        alert("File PDF tidak tersedia.");
+        return;
+      }
+      const pdfEndpoint = `https://0794-158-140-166-68.ngrok-free.app/download_pdf?file=${encodeURIComponent(resultData.pdf_file)}`;
       const response = await fetch(pdfEndpoint, {
         method: 'GET',
-        headers: {
-          // Header ini wajib untuk melewati halaman peringatan ngrok
-          'ngrok-skip-browser-warning': 'true' 
-        }
+        headers: { 'ngrok-skip-browser-warning': 'true' }
       });
-
-      if (!response.ok) {
-        throw new Error(`Gagal mengunduh: ${response.status}`);
-      }
-
-      // Ubah response menjadi bentuk Blob (file)
+      if (!response.ok) throw new Error(`Gagal mengunduh: ${response.status}`);
       const blob = await response.blob();
-      
-      // Buat URL sementara untuk file Blob tersebut
       const downloadUrl = window.URL.createObjectURL(blob);
-      
-      // Buat elemen <a> sementara untuk memicu unduhan otomatis
       const link = document.createElement('a');
       link.href = downloadUrl;
-      link.setAttribute('download', `Hasil_CT_Scan_${patientName || 'Pasien'}.pdf`); // Nama file yang diunduh
+      link.setAttribute('download', `Hasil_CT_Scan_${patientName || 'Pasien'}.pdf`);
       document.body.appendChild(link);
       link.click();
-      
-      // Bersihkan elemen dan URL sementara
       link.remove();
       window.URL.revokeObjectURL(downloadUrl);
-
     } catch (error) {
       console.error("Error saat mengunduh PDF:", error);
       alert("Terjadi kesalahan saat mengunduh laporan PDF.");
     }
   };
 
-return (
-  <div className="page">
-    <link rel="stylesheet" href="/static/css/auth.css" />
+  const isNormal = resultData?.predicted_class?.toLowerCase() === "normal";
+  const hasValidResult = status === "done" && resultData && !result?.includes("Gagal");
 
-    <main className="shell full-width" style={{ padding: "40px 20px" }}>
-      
-      {/* Container utama yang akan membagi layar menjadi 2 jika ada hasil */}
-      <div className={`scan-container ${status === "done" && resultData ? "has-result" : ""}`}>
-        
-        
-          
-          {/* KOLOM KIRI: ANALISIS CT SCAN */}
-          <section className="scan-card-dynamic flex-card">
-            <div style={{ textAlign: "center", marginBottom: 20 }}>
-              <div className="h1" style={{ fontSize: 28, marginBottom: 6 }}>Analisis CT Scan</div>
-              <div className="desc">Masukkan data pasien dan unggah gambar</div>
+  return (
+    <>
+      <link rel="stylesheet" href="/static/css/scan.css" />
+
+      <div className="sp-page">
+        {/* NAVBAR */}
+        <nav className="sp-nav">
+          <div className="sp-nav-left">
+            <div className="sp-nav-logo">
+              <img src="/static/img/logo-poltekkes.webp" alt="SiDes CT Logo" />
             </div>
-
-            <div className="form">
-              <div className="field">
-                <label>🏥 Medical Record</label>
-                <input 
-                  type="text" 
-                  value={medicalRecord} 
-                  onChange={(e) => setMedicalRecord(e.target.value)} 
-                  placeholder="Contoh: 123456" 
-                />
-              </div>
-              <div className="field">
-                <label>👤 Nama Pasien</label>
-                <input 
-                  type="text" 
-                  value={patientName} 
-                  onChange={(e) => setPatientName(e.target.value)} 
-                  placeholder="Nama Lengkap" 
-                />
-              </div>
+            <div className="sp-nav-brand">
+              <div className="sp-nav-title">SiDes CT</div>
+              <div className="sp-nav-subtitle">Sistem Deteksi Stroke</div>
             </div>
+          </div>
+          <div className="sp-nav-right">
+            <div className="sp-status-dot">AI Model Aktif</div>
+            <button
+              onClick={() => (window.location.href = '/login')}
+              className="sp-btn-logout"
+            >
+              <span>↩</span> Logout
+            </button>
+          </div>
+        </nav>
 
-            <div className="upload" style={{ marginTop: 20, flex: 1 }}>
-              <input ref={inputRef} type="file" accept="image/*" onChange={onFileChange} style={{ display: "none" }} />
-              {!preview ? (
-                <button className="btn-primary" onClick={() => inputRef.current?.click()}>
-                  ➕ Pilih Gambar CT Scan
-                </button>
-              ) : (
-                <div style={{ textAlign: "center" }}>
-                  <img src={preview} alt="preview" style={{ width: "100%", borderRadius: 10, maxHeight: 300, objectFit: "contain" }} />
-                  <div style={{ display: "flex", gap: 10, marginTop: 15 }}>
-                    <button className="btn-primary" onClick={startScan} disabled={status === "scanning"} style={{ flex: 1 }}>
-                      {status === "scanning" ? "⏳ Memproses..." : "Mulai Analisis"}
+        <main className="sp-main">
+          {/* Page Header */}
+          <div className="sp-page-header">
+            <div className="sp-page-label">🧠 CT Scan Analyzer</div>
+            <h1 className="sp-page-title">Analisis CT Scan Kepala</h1>
+            <p className="sp-page-desc">Unggah gambar CT Scan untuk mendeteksi kemungkinan stroke menggunakan AI</p>
+          </div>
+
+          {/* Main Grid */}
+          <div className={`sp-grid ${hasValidResult ? "has-result" : ""}`}>
+
+            {/* ─── KOLOM KIRI: INPUT ─── */}
+            <div className="sp-card">
+              <div className="sp-card-header">
+                <div className="sp-card-icon">📋</div>
+                <div>
+                  <h2 className="sp-card-title">Data Pasien & Gambar</h2>
+                  <p className="sp-card-subtitle">Isi form berikut sebelum melakukan analisis</p>
+                </div>
+              </div>
+              <div className="sp-card-body">
+
+                {/* Form Grid */}
+                <div className="sp-form-grid">
+                  <div className="sp-field">
+                    <label className="sp-label">🏥 Rekam Medis</label>
+                    <input
+                      className="sp-input"
+                      type="text"
+                      value={medicalRecord}
+                      onChange={(e) => setMedicalRecord(e.target.value)}
+                      placeholder="Contoh: RM-123456"
+                    />
+                  </div>
+                  <div className="sp-field">
+                    <label className="sp-label">👤 Nama Pasien</label>
+                    <input
+                      className="sp-input"
+                      type="text"
+                      value={patientName}
+                      onChange={(e) => setPatientName(e.target.value)}
+                      placeholder="Nama Lengkap"
+                    />
+                  </div>
+                </div>
+
+                <div className="sp-divider" />
+
+                {/* Upload / Preview */}
+                <input
+                  ref={inputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={onFileChange}
+                  style={{ display: "none" }}
+                />
+
+                {!preview ? (
+                  <div
+                    className="sp-dropzone"
+                    onClick={() => inputRef.current?.click()}
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                  >
+                    {/* <span className="sp-dropzone-icon">🩻</span> */}
+                    <p className="sp-dropzone-title">Unggah Gambar CT Scan</p>
+                    <p className="sp-dropzone-hint">Seret file ke sini atau klik untuk memilih · PNG, JPG, DICOM</p>
+                    <button className="sp-btn-upload" type="button" onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }}>
+                      ➕ Pilih File
                     </button>
-                    <button className="btn-secondary" onClick={() => handleFileSelect(null)} style={{padding: '12px 20px', borderRadius: '10px', border:'1px solid #ddd', background:'#fff'}}>✕</button>
                   </div>
-                </div>
-              )}
-            </div>
-            
-            <div className="footer" style={{ marginTop: 'auto', paddingTop: 20 }}>
-              <span className="pill">Powered by CT-AI</span>
-            </div>
-          </section>
+                ) : (
+                  <div>
+                    <div className="sp-preview-wrap">
+                      <img src={preview} alt="CT Scan Preview" className="sp-preview-img" />
+                      {status === "scanning" && (
+                        <div className="sp-scanning-overlay">
+                          <div className="sp-scan-line" />
+                          <div className="sp-spinner" />
+                          <span className="sp-scanning-text">Menganalisis...</span>
+                        </div>
+                      )}
+                      {status !== "scanning" && (
+                        <div className="sp-preview-overlay">
+                          <button
+                            className="sp-preview-btn remove"
+                            onClick={() => handleFileSelect(null)}
+                            title="Hapus gambar"
+                          >✕</button>
+                        </div>
+                      )}
+                    </div>
 
-          {/* KOLOM KANAN: HASIL ANALISIS (Muncul jika ada data) */}
-          {status === "done" && resultData && !result?.includes("Gagal") && (
-            <section className="result-card flex-card" style={{ marginTop: 0 }}>
-              <div className="result-header">
-                <span className="result-badge">Hasil Analisis AI</span>
-                <div className={`result-main-value ${resultData?.predicted_class === "Normal" ? "status-normal" : "status-abnormal"}`}>
-                  {resultData?.predicted_class === "Normal" ? "✅ NORMAL" : "⚠️ ABNORMAL"}
+                    <div className="sp-actions">
+                      <button
+                        className="sp-btn-primary"
+                        onClick={startScan}
+                        disabled={status === "scanning"}
+                      >
+                        {status === "scanning" ? (
+                          <>⏳ Memproses Analisis...</>
+                        ) : (
+                          <>🔬 Mulai Analisis</>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Error */}
+                {result?.includes("Gagal") || (status === "done" && result && !resultData) ? (
+                  <div className="sp-error">
+                    <span>⚠️</span>
+                    <span>{result}</span>
+                  </div>
+                ) : null}
+
+                {/* Footer */}
+                <div className="sp-footer">
+                  <span className="sp-pill">⚡ Powered by CT-AI</span>
+                  <span>·</span>
+                  <span>Hanya untuk keperluan medis terautorisasi</span>
                 </div>
               </div>
+            </div>
 
-              <div className="result-content" style={{ flex: 1 }}>
-                <div className="confidence-section">
-                  <div className="result-label-group">
-                    <span className="result-label">Tingkat Kepercayaan</span>
-                    <span className="result-data-bold">{(Number(resultData.confidence) * 100).toFixed(2)}%</span>
-                  </div>
-                  <div className="confidence-bar-bg">
-                    <div 
-                      className={`confidence-bar-fill ${resultData?.predicted_class === "Normal" ? "bg-teal" : "bg-red"}`}
-                      style={{ width: `${Number(resultData.confidence) * 100}%` }}
-                    ></div>
+            {/* ─── KOLOM KANAN: RESULT ─── */}
+            {hasValidResult && (
+              <div className={`sp-card sp-result-card`}>
+                <div className="sp-card-header">
+                  <div className="sp-card-icon">📊</div>
+                  <div>
+                    <h2 className="sp-card-title">Hasil Analisis AI</h2>
+                    <p className="sp-card-subtitle">Diproses menggunakan model deep learning</p>
                   </div>
                 </div>
 
-                <div className="result-grid">
-                  <div className="result-item">
-                    <div className="result-label">Pasien</div>
-                    <div className="result-data">{resultData?.patient_name}</div>
+                {/* Result Header Band */}
+                <div className={`sp-result-header-band ${isNormal ? "normal" : "abnormal"}`}>
+                  <div className="sp-result-badge">DIAGNOSIS SEMENTARA</div>
+                  <p className={`sp-result-verdict ${isNormal ? "normal" : "abnormal"}`}>
+                    {isNormal ? "✅ NORMAL" : "⚠️ STROKE TERDETEKSI"}
+                  </p>
+                  <p className="sp-result-sub">
+                    {isNormal
+                      ? "Tidak ditemukan indikasi stroke pada CT Scan ini"
+                      : "Terdeteksi potensi abnormalitas pada CT Scan"}
+                  </p>
+                </div>
+
+                <div className="sp-result-body">
+                  {/* Confidence */}
+                  <div>
+                    <div className="sp-conf-header">
+                      <span className="sp-conf-label">Tingkat Kepercayaan</span>
+                      <span className={`sp-conf-value ${isNormal ? "normal" : "abnormal"}`}>
+                        {(Number(resultData.confidence) * 100).toFixed(3)}%
+                      </span>
+                    </div>
+                    <div className="sp-conf-track">
+                      <div
+                        className={`sp-conf-fill ${isNormal ? "normal" : "abnormal"}`}
+                        style={{ width: `${Number(resultData.confidence) * 100}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="result-item">
-                    <div className="result-label">ID Rekam Medis</div>
-                    <div className="result-data">{resultData?.medical_record}</div>
+
+                  {/* Patient Info */}
+                  <div className="sp-info-grid">
+                    <div className="sp-info-item">
+                      <p className="sp-info-label">Nama Pasien</p>
+                      <p className="sp-info-value">{resultData?.patient_name}</p>
+                    </div>
+                    <div className="sp-info-item">
+                      <p className="sp-info-label">ID Rekam Medis</p>
+                      <p className="sp-info-value" style={{ fontFamily: "var(--font-mono)" }}>
+                        {resultData?.medical_record}
+                      </p>
+                    </div>
+                    <div className="sp-info-item">
+                      <p className="sp-info-label">Kelas Prediksi</p>
+                      <p className="sp-info-value">{resultData?.predicted_class}</p>
+                    </div>
+                    <div className="sp-info-item">
+                      <p className="sp-info-label">Waktu Analisis</p>
+                      <p className="sp-info-value" style={{ fontFamily: "var(--font-mono)" }}>
+                        {new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Disclaimer */}
+                  <div className="sp-ai-note">
+                    <span className="sp-ai-note-icon">ℹ️</span>
+                    <span>Hasil ini merupakan bantuan analisis AI dan <strong>bukan pengganti diagnosis dokter</strong>. Selalu konfirmasikan dengan tenaga medis berpengalaman.</span>
                   </div>
                 </div>
-              </div>
 
-              {/* URL PDF BARU */}
-              <div style={{ padding: '0 20px 20px 20px' }}>
-                <button 
+                {/* Download PDF */}
+                <div className="sp-result-footer">
+                  <button
                     onClick={handleDownloadPdf}
-                    className="btn-pdf"
+                    className="sp-btn-download"
                     type="button"
-                    style={{ 
-                    margin: 0, 
-                    width: '100%', 
-                    border: 'none', 
-                    cursor: 'pointer',
-                    fontFamily: 'inherit'
-                    }}
-                >
+                  >
                     📄 Unduh Laporan PDF
-                </button>
+                  </button>
+                </div>
               </div>
-            </section>
-          )}
-        </div>
-    </main>
-  </div>
-);
+            )}
+          </div>
+        </main>
+      </div>
+    </>
+  );
 }
