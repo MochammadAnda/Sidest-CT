@@ -13,7 +13,8 @@ export default function ScanPage() {
   const [resultData, setResultData] = useState<any>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  const API_URL = "https://0794-158-140-166-68.ngrok-free.app/predict";
+  const BACKEND_HOST = "http://72.62.127.63:5001";
+  const API_URL = `${BACKEND_HOST}/predict`;
 
   function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0] ?? null;
@@ -57,22 +58,40 @@ export default function ScanPage() {
     fetch(API_URL, { method: "POST", body: formData })
       .then(async (res) => {
         const data = await res.json().catch(() => null);
-        if (!res.ok) throw new Error((data && data.message) || `Server returned ${res.status}`);
-        if (data) {
-          const { confidence, image_url, pdf_file, predicted_class } = data as any;
-          setResultData(data);
-          setResult(`Hasil: ${predicted_class} — Confidence: ${Number(confidence).toFixed(3)}`);
-          if (image_url) setImageUrl(image_url);
-          if (pdf_file) {
-            try {
-              const u = new URL(String(pdf_file), API_URL);
-              setPdfUrl(u.toString());
-            } catch (e) {
-              setPdfUrl(API_URL + String(pdf_file));
-            }
-          }
-        } else {
+
+        if (!res.ok) {
+          const errMsg = (data && (data.error || data.message)) || `Server returned ${res.status}`;
+          // Ubah prefix pesan agar tidak membingungkan
+          const prefix = res.status === 400 ? "Validasi Ditolak" : "Gagal menghubungi server";
+          setResult(`${prefix}: ${errMsg}`);
+          setStatus("done");
+          return;
+        }
+
+        if (!data) {
           setResult("Respon tidak valid dari server.");
+          setStatus("done");
+          return;
+        }
+
+        // Handle application-level errors returned with 200 OK
+        if (data.error || data.success === false || data.message && typeof data.message === 'string' && data.message.length > 0 && !data.confidence) {
+          setResult(data.error || data.message || "Respon error dari server.");
+          setStatus("done");
+          return;
+        }
+
+        const { confidence, image_url, pdf_file, predicted_class } = data as any;
+        setResultData(data);
+        setResult(`Hasil: ${predicted_class} — Confidence: ${Number(confidence).toFixed(3)}`);
+        if (image_url) setImageUrl(image_url);
+        if (pdf_file) {
+          try {
+            const u = new URL(String(pdf_file), API_URL);
+            setPdfUrl(u.toString());
+          } catch (e) {
+            setPdfUrl(API_URL + String(pdf_file));
+          }
         }
       })
       .catch((err) => {
@@ -84,33 +103,65 @@ export default function ScanPage() {
 
   const handleDownloadPdf = async () => {
     try {
-      if (!resultData?.pdf_file) {
+      const fileRef = resultData?.pdf_file || resultData?.pdf || pdfUrl;
+      if (!fileRef) {
         alert("File PDF tidak tersedia.");
         return;
       }
-      const pdfEndpoint = `https://0794-158-140-166-68.ngrok-free.app/download_pdf?file=${encodeURIComponent(resultData.pdf_file)}`;
+
+      // If the server already returned a complete URL, use it directly.
+      let pdfEndpoint = String(fileRef);
+      try {
+        const u = new URL(pdfEndpoint);
+        // it's an absolute URL, keep as-is
+      } catch (e) {
+        // not an absolute URL, assume backend download route
+        pdfEndpoint = `${BACKEND_HOST}/download_pdf?file=${encodeURIComponent(String(fileRef))}`;
+      }
+
       const response = await fetch(pdfEndpoint, {
         method: 'GET',
         headers: { 'ngrok-skip-browser-warning': 'true' }
       });
-      if (!response.ok) throw new Error(`Gagal mengunduh: ${response.status}`);
+
+      if (!response.ok) {
+        const text = await response.text().catch(() => "");
+        throw new Error(`Gagal mengunduh (status ${response.status}) ${text}`);
+      }
+
       const blob = await response.blob();
       const downloadUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = downloadUrl;
       link.setAttribute('download', `Hasil_CT_Scan_${patientName || 'Pasien'}.pdf`);
       document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(downloadUrl);
-    } catch (error) {
+      try {
+        link.click();
+      } finally {
+        link.remove();
+      }
+
+      // Revoke after a short delay to avoid some browser races that cancel downloads
+      setTimeout(() => {
+        try { window.URL.revokeObjectURL(downloadUrl); } catch (e) { /* ignore */ }
+      }, 1500);
+    } catch (error: any) {
       console.error("Error saat mengunduh PDF:", error);
-      alert("Terjadi kesalahan saat mengunduh laporan PDF.");
+      alert(error?.message ? `Terjadi kesalahan saat mengunduh laporan PDF: ${error.message}` : "Terjadi kesalahan saat mengunduh laporan PDF.");
     }
   };
 
-  const isNormal = resultData?.predicted_class?.toLowerCase() === "normal";
-  const hasValidResult = status === "done" && resultData && !result?.includes("Gagal");
+  // const isNormal = resultData?.predicted_class?.toLowerCase() === "normal";
+const hasValidResult = status === "done" && resultData && !result?.includes("Gagal");
+
+  // 1. Definisikan 3 state di atas return statement atau di dalam blok render
+const predictedClass = resultData?.predicted_class?.toLowerCase() || "";
+const isNormal = predictedClass === "normal";
+const isStroke = predictedClass === "stroke iskemik";
+const isUnclear = predictedClass === "tidak terdeteksi / tidak jelas";
+
+// 2. Tentukan status untuk styling
+const statusClass = isNormal ? "normal" : isStroke ? "stroke" : "unclear";
 
   return (
     <>
@@ -266,6 +317,7 @@ export default function ScanPage() {
             </div>
 
             {/* ─── KOLOM KANAN: RESULT ─── */}
+            {/* ─── KOLOM KANAN: RESULT ─── */}
             {hasValidResult && (
               <div className={`sp-card sp-result-card`}>
                 <div className="sp-card-header">
@@ -277,30 +329,34 @@ export default function ScanPage() {
                 </div>
 
                 {/* Result Header Band */}
-                <div className={`sp-result-header-band ${isNormal ? "normal" : "abnormal"}`}>
+                <div className={`sp-result-header-band ${statusClass}`}>
                   <div className="sp-result-badge">DIAGNOSIS SEMENTARA</div>
-                  <p className={`sp-result-verdict ${isNormal ? "normal" : "abnormal"}`}>
-                    {isNormal ? "✅ NORMAL" : "⚠️ STROKE TERDETEKSI"}
+                  <p className={`sp-result-verdict ${statusClass}`}>
+                    {isNormal && "✅ NORMAL"}
+                    {isStroke && "⚠️ STROKE TERDETEKSI"}
+                    {isUnclear && "❓ TIDAK TERDETEKSI / TIDAK JELAS"}
                   </p>
                   <p className="sp-result-sub">
-                    {isNormal
-                      ? "Tidak ditemukan indikasi stroke pada CT Scan ini"
-                      : "Terdeteksi potensi abnormalitas pada CT Scan"}
+                    {isNormal && "Tidak ditemukan indikasi stroke pada CT Scan ini."}
+                    {isStroke && "Terdeteksi potensi abnormalitas pada CT Scan."}
+                    {isUnclear && "Gambar tidak valid atau confidence model rendah. Harap cek kembali."}
                   </p>
                 </div>
 
+                {/* --- PASTIKAN DIV INI ADA --- */}
                 <div className="sp-result-body">
+                  
                   {/* Confidence */}
                   <div>
                     <div className="sp-conf-header">
                       <span className="sp-conf-label">Tingkat Kepercayaan</span>
-                      <span className={`sp-conf-value ${isNormal ? "normal" : "abnormal"}`}>
+                      <span className={`sp-conf-value ${statusClass}`}>
                         {(Number(resultData.confidence) * 100).toFixed(3)}%
                       </span>
                     </div>
                     <div className="sp-conf-track">
                       <div
-                        className={`sp-conf-fill ${isNormal ? "normal" : "abnormal"}`}
+                        className={`sp-conf-fill ${statusClass}`}
                         style={{ width: `${Number(resultData.confidence) * 100}%` }}
                       />
                     </div>
@@ -335,7 +391,8 @@ export default function ScanPage() {
                     <span className="sp-ai-note-icon">ℹ️</span>
                     <span>Hasil ini merupakan bantuan analisis AI dan <strong>bukan pengganti diagnosis dokter</strong>. Selalu konfirmasikan dengan tenaga medis berpengalaman.</span>
                   </div>
-                </div>
+                </div> 
+                {/* --- BATAS PENUTUP RESULT BODY --- */}
 
                 {/* Download PDF */}
                 <div className="sp-result-footer">
