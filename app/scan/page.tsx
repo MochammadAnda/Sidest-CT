@@ -13,7 +13,7 @@ export default function ScanPage() {
   const [resultData, setResultData] = useState<any>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  const API_URL = "https://0794-158-140-166-68.ngrok-free.app/predict";
+  const API_URL = "https://sidesct.cloud/predict";
 
   function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0] ?? null;
@@ -88,7 +88,7 @@ export default function ScanPage() {
         alert("File PDF tidak tersedia.");
         return;
       }
-      const pdfEndpoint = `https://0794-158-140-166-68.ngrok-free.app/download_pdf?file=${encodeURIComponent(resultData.pdf_file)}`;
+      const pdfEndpoint = `https://sidesct.cloud/download_pdf?file=${encodeURIComponent(resultData.pdf_file)}`;
       const response = await fetch(pdfEndpoint, {
         method: 'GET',
         headers: { 'ngrok-skip-browser-warning': 'true' }
@@ -125,7 +125,7 @@ export default function ScanPage() {
             </div>
             <div className="sp-nav-brand">
               <div className="sp-nav-title">SiDes CT</div>
-              <div className="sp-nav-subtitle">Sistem Deteksi Stroke</div>
+              <div className="sp-nav-subtitle">Sistem Deteksi Stroke Iskemik</div>
             </div>
           </div>
           <div className="sp-nav-right">
@@ -144,7 +144,7 @@ export default function ScanPage() {
           <div className="sp-page-header">
             <div className="sp-page-label">🧠 CT Scan Analyzer</div>
             <h1 className="sp-page-title">Analisis CT Scan Kepala</h1>
-            <p className="sp-page-desc">Unggah gambar CT Scan untuk mendeteksi kemungkinan stroke menggunakan AI</p>
+            <p className="sp-page-desc">Unggah Citra CT Scan untuk mendeteksi kemungkinan stroke iskemik menggunakan AI</p>
           </div>
 
           {/* Main Grid */}
@@ -155,7 +155,7 @@ export default function ScanPage() {
               <div className="sp-card-header">
                 <div className="sp-card-icon">📋</div>
                 <div>
-                  <h2 className="sp-card-title">Data Pasien & Gambar</h2>
+                  <h2 className="sp-card-title">Data Pasien & Citra</h2>
                   <p className="sp-card-subtitle">Isi form berikut sebelum melakukan analisis</p>
                 </div>
               </div>
@@ -204,7 +204,7 @@ export default function ScanPage() {
                     onDragOver={handleDragOver}
                   >
                     {/* <span className="sp-dropzone-icon">🩻</span> */}
-                    <p className="sp-dropzone-title">Unggah Gambar CT Scan</p>
+                    <p className="sp-dropzone-title">Unggah Citra CT Scan</p>
                     <p className="sp-dropzone-hint">Seret file ke sini atau klik untuk memilih · PNG, JPG, DICOM</p>
                     <button className="sp-btn-upload" type="button" onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }}>
                       ➕ Pilih File
@@ -226,7 +226,7 @@ export default function ScanPage() {
                           <button
                             className="sp-preview-btn remove"
                             onClick={() => handleFileSelect(null)}
-                            title="Hapus gambar"
+                            title="Hapus Citra"
                           >✕</button>
                         </div>
                       )}
@@ -280,11 +280,11 @@ export default function ScanPage() {
                 <div className={`sp-result-header-band ${isNormal ? "normal" : "abnormal"}`}>
                   <div className="sp-result-badge">DIAGNOSIS SEMENTARA</div>
                   <p className={`sp-result-verdict ${isNormal ? "normal" : "abnormal"}`}>
-                    {isNormal ? "✅ NORMAL" : "⚠️ STROKE TERDETEKSI"}
+                    {isNormal ? "✅ NORMAL" : "⚠️ STROKE ISKEMIKTERDETEKSI"}
                   </p>
                   <p className="sp-result-sub">
                     {isNormal
-                      ? "Tidak ditemukan indikasi stroke pada CT Scan ini"
+                      ? "Tidak ditemukan indikasi stroke Iskemik pada CT Scan ini"
                       : "Terdeteksi potensi abnormalitas pada CT Scan"}
                   </p>
                 </div>

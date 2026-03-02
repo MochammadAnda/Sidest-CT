@@ -29,7 +29,7 @@ export default function LoginPage() {
         <section className="hero" aria-label="Panel Informasi">
           <div className="hero-inner">
             <div className="hero-kicker">Selamat Datang</div>
-            <h1 className="hero-title">Sistem Deteksi Stroke<br/>Berbasis Citra CT Scan</h1>
+            <h1 className="hero-title">Sistem Deteksi Stroke Iskemik<br/>Berbasis Citra CT Scan</h1>
             <p className="hero-subtitle"></p>
           </div>
         </section>
@@ -43,7 +43,7 @@ export default function LoginPage() {
             <div className="h1">SiDes CT</div>
 
             <p className="desc">
-              Nikmati kemudahahn sistem deteksi <b>Stroke Berbasis Citra CT Scan</b> dengan <b>deep learning</b>
+              Nikmati kemudahahn sistem deteksi <b>Stroke Iskemik Berbasis Citra CT Scan</b> dengan <b>deep learning</b>
             </p>
 
             <div className="sep">Masuk dengan akun</div>
