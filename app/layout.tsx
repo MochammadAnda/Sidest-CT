@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "SIDest CT",
   description: "sistem deteksi stroke berbasis citra CT Scan",
+  icons: {
+    icon: "/ico.png",
+  },
 };
 
 export default function RootLayout({
